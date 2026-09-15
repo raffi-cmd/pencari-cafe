@@ -30,7 +30,7 @@ export function CafeModal({
   const fallbackImg = "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80";
 
   const handleShare = () => {
-    const url = `${window.location.origin}/cafe/${cafe.id}`;
+    const url = `${window.location.origin}${window.location.pathname}#/cafe/${cafe.id}`;
     if (navigator.share) {
       navigator.share({
         title: cafe.name,

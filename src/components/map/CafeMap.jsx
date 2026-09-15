@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import L from "leaflet";
-import { MapPin, Navigation, ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
+import { MapPin } from "lucide-react";
 
 export function CafeMap({
   cafes = [],
@@ -77,7 +76,6 @@ export function CafeMap({
       if (!cafe.coordinates || !cafe.coordinates.lat || !cafe.coordinates.lng) return;
 
       const isSelected = selectedCafeId === cafe.id;
-      const markerColor = isSelected ? "#d97706" : "#78350f";
 
       const cafeIcon = L.divIcon({
         className: "custom-cafe-marker",
@@ -108,7 +106,7 @@ export function CafeMap({
       const marker = L.marker([cafe.coordinates.lat, cafe.coordinates.lng], { icon: cafeIcon })
         .addTo(map);
 
-      // Custom Popup HTML
+      // Custom Popup HTML using HashRouter path (#/cafe/${cafe.id})
       const popupHtml = `
         <div style="width: 220px; font-family: 'Plus Jakarta Sans', sans-serif;">
           <img src="${cafe.image || ''}" style="width: 100%; height: 110px; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;" />
@@ -116,7 +114,7 @@ export function CafeMap({
             <div style="font-size: 11px; font-weight: 700; color: #d97706; text-transform: uppercase;">JAK-${cafe.area} • ${cafe.price}</div>
             <h4 style="font-weight: 800; font-size: 13px; margin: 2px 0 4px; color: #1c1917; line-height: 1.2;">${cafe.name}</h4>
             <div style="font-size: 11px; color: #78716c; margin-bottom: 8px;">⭐ ${cafe.rating} • ⚡ WFC ${cafe.wfcScore || '-'}</div>
-            <a href="/cafe/${cafe.id}" style="
+            <a href="#/cafe/${cafe.id}" style="
               display: block;
               text-align: center;
               background-color: #d97706;
