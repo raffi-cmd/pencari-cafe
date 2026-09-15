@@ -1,17 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
   Heart, 
   Scale, 
-  MapPin, 
   Clock, 
   Wifi, 
   Zap, 
-  Sparkles, 
-  CheckCircle2, 
-  XCircle,
-  Eye,
-  Navigation
+  Navigation,
+  ArrowUpRight
 } from "lucide-react";
 import { StarRating } from "../common/StarRating";
 import { isCafeOpen } from "../../hooks/useCafeFilter";
@@ -21,61 +17,57 @@ export function CafeCard({
   isFavorite = false,
   onToggleFavorite,
   isInCompare = false,
-  onToggleCompare,
-  onQuickView
+  onToggleCompare
 }) {
   const isOpen = isCafeOpen(cafe.openHours);
   const fallbackImg = "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80";
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   return (
-    <div className="group bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-amber-500/50 dark:hover:border-amber-500/40 transition-all duration-300 flex flex-col h-full">
+    <article className="group bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-amber-500/40 dark:hover:border-amber-500/30 transition-all duration-300 flex flex-col h-full focus-within:ring-2 focus-within:ring-amber-500">
       
-      {/* Image & Badges Container */}
+      {/* Image Container */}
       <div className="relative aspect-[16/10] overflow-hidden bg-stone-100 dark:bg-stone-800">
+        {!imgLoaded && (
+          <div className="absolute inset-0 bg-stone-200 dark:bg-stone-800 animate-pulse" />
+        )}
         <img
           src={cafe.image || fallbackImg}
-          alt={cafe.name}
+          alt={`Foto suasana kedai ${cafe.name}`}
+          onLoad={() => setImgLoaded(true)}
           onError={(e) => {
             e.target.src = fallbackImg;
+            setImgLoaded(true);
           }}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
           loading="lazy"
         />
 
         {/* Top Badges */}
-        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-10">
+        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-10 pointer-events-none">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {/* Open / Closed Badge */}
+            {/* Open / Closed Status */}
             <span
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold backdrop-blur-md shadow-sm ${
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold backdrop-blur-md shadow-sm ${
                 isOpen
-                  ? "bg-emerald-500/90 text-white"
-                  : "bg-rose-500/90 text-white"
+                  ? "bg-emerald-950/80 text-emerald-300 border border-emerald-500/30"
+                  : "bg-stone-900/80 text-stone-300 border border-stone-700/50"
               }`}
             >
-              {isOpen ? (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                  Buka Sekarang
-                </>
-              ) : (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
-                  Tutup
-                </>
-              )}
+              <span className={`w-1.5 h-1.5 rounded-full ${isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-stone-400'}`} />
+              {isOpen ? "Buka" : "Tutup"}
             </span>
 
             {/* WFC Score Badge */}
             {cafe.wfcScore && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/90 text-white backdrop-blur-md shadow-sm">
-                ⚡ WFC {cafe.wfcScore}
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-950/80 text-amber-300 border border-amber-500/30 backdrop-blur-md shadow-sm">
+                WFC {cafe.wfcScore}
               </span>
             )}
           </div>
 
-          {/* Action Buttons: Favorite & Compare */}
-          <div className="flex items-center gap-1.5">
+          {/* Action Buttons: Compare & Favorite */}
+          <div className="flex items-center gap-1.5 pointer-events-auto">
             {/* Compare Button */}
             <button
               onClick={(e) => {
@@ -83,14 +75,14 @@ export function CafeCard({
                 e.stopPropagation();
                 onToggleCompare?.(cafe.id);
               }}
-              title={isInCompare ? "Hapus dari komparasi" : "Bandingkan kedai"}
+              aria-label={isInCompare ? `Hapus ${cafe.name} dari komparasi` : `Tambahkan ${cafe.name} ke komparasi`}
               className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-sm ${
                 isInCompare
                   ? "bg-blue-600 text-white scale-105"
-                  : "bg-black/40 text-white hover:bg-blue-600"
+                  : "bg-black/50 text-stone-200 hover:bg-blue-600 hover:text-white"
               }`}
             >
-              <Scale className="w-4 h-4" />
+              <Scale className="w-3.5 h-3.5" />
             </button>
 
             {/* Favorite Button */}
@@ -100,27 +92,27 @@ export function CafeCard({
                 e.stopPropagation();
                 onToggleFavorite?.(cafe.id);
               }}
-              title={isFavorite ? "Hapus dari favorit" : "Simpan ke favorit"}
+              aria-label={isFavorite ? `Hapus ${cafe.name} dari favorit` : `Simpan ${cafe.name} ke favorit`}
               className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-sm ${
                 isFavorite
                   ? "bg-rose-500 text-white scale-105"
-                  : "bg-black/40 text-white hover:bg-rose-500"
+                  : "bg-black/50 text-stone-200 hover:bg-rose-500 hover:text-white"
               }`}
             >
               <Heart
-                className={`w-4 h-4 ${isFavorite ? "fill-white" : ""}`}
+                className={`w-3.5 h-3.5 ${isFavorite ? "fill-white" : ""}`}
               />
             </button>
           </div>
         </div>
 
-        {/* Bottom Distance & Area Pill */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-          <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-black/60 text-white backdrop-blur-md">
-            📍 Jak-{cafe.area}
+        {/* Bottom Area / Distance */}
+        <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+          <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-medium bg-black/60 text-stone-200 backdrop-blur-md">
+            Jak-{cafe.area}
           </span>
           {cafe.distanceKm !== undefined && cafe.distanceKm !== null && (
-            <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-amber-600/90 text-white backdrop-blur-md flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-medium bg-amber-900/80 text-amber-200 backdrop-blur-md flex items-center gap-1">
               <Navigation className="w-3 h-3" />
               {cafe.distanceKm} km
             </span>
@@ -131,16 +123,19 @@ export function CafeCard({
       {/* Content Container */}
       <div className="p-4 sm:p-5 flex flex-col flex-1">
         
-        {/* Rating & Price Row */}
+        {/* Rating & Price */}
         <div className="flex items-center justify-between gap-2 mb-2">
           <StarRating rating={cafe.rating} count={cafe.reviewCount} />
-          <span className="px-2 py-0.5 rounded-md text-xs font-extrabold bg-stone-100 dark:bg-stone-800 text-amber-700 dark:text-amber-400">
-            {cafe.price} <span className="font-normal text-[11px] text-stone-500">({cafe.priceNumeric ? `~${(cafe.priceNumeric / 1000)}k` : "Variatif"})</span>
+          <span className="text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200/50 dark:border-amber-900/40">
+            {cafe.price} <span className="font-normal text-[11px] text-stone-500 dark:text-stone-400">({cafe.priceNumeric ? `~${(cafe.priceNumeric / 1000)}k` : "Variatif"})</span>
           </span>
         </div>
 
-        {/* Title & Tagline */}
-        <Link to={`/cafe/${cafe.id}`} className="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+        {/* Title */}
+        <Link 
+          to={`/cafe/${cafe.id}`} 
+          className="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors focus:outline-none"
+        >
           <h3 className="font-bold text-base sm:text-lg text-stone-900 dark:text-white line-clamp-1">
             {cafe.name}
           </h3>
@@ -162,38 +157,28 @@ export function CafeCard({
             </span>
           ))}
           {cafe.facilities?.length > 3 && (
-            <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-500">
-              +{cafe.facilities.length - 3} lagi
+            <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400">
+              +{cafe.facilities.length - 3}
             </span>
           )}
         </div>
 
-        {/* Footer info & CTA buttons */}
+        {/* Footer info & CTA */}
         <div className="mt-auto pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1 text-xs text-stone-500 dark:text-stone-400">
-            <Clock className="w-3.5 h-3.5" />
-            <span className="text-[11px] truncate max-w-[120px] sm:max-w-none">{cafe.openHours}</span>
+            <Clock className="w-3.5 h-3.5 text-stone-400" />
+            <span className="text-[11px] truncate max-w-[130px] sm:max-w-none">{cafe.openHours}</span>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            {onQuickView && (
-              <button
-                onClick={() => onQuickView(cafe)}
-                title="Lihat Cepat"
-                className="p-1.5 rounded-lg border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-              >
-                <Eye className="w-4 h-4" />
-              </button>
-            )}
-            <Link
-              to={`/cafe/${cafe.id}`}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-colors flex items-center gap-1 shadow-sm"
-            >
-              Detail
-            </Link>
-          </div>
+          <Link
+            to={`/cafe/${cafe.id}`}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-200/60 dark:border-amber-800/60 transition-colors inline-flex items-center gap-1"
+          >
+            <span>Lihat Detail</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

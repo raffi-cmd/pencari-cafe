@@ -1,20 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { 
-  Compass, 
-  Map as MapIcon, 
   Grid, 
-  Sparkles, 
-  Coffee, 
-  Shuffle, 
-  Zap, 
+  Map as MapIcon, 
   SlidersHorizontal,
-  Flame
+  Laptop, 
+  Coffee, 
+  Sparkles, 
+  Wallet, 
+  Flame,
+  ArrowRight,
+  Compass
 } from "lucide-react";
 import { SearchBar } from "../components/cafe/SearchBar";
 import { FilterPanel } from "../components/cafe/FilterPanel";
 import { CafeGrid } from "../components/cafe/CafeGrid";
+import { CafeCard } from "../components/cafe/CafeCard";
 import { CafeMap } from "../components/map/CafeMap";
-import { CafeModal } from "../components/cafe/CafeModal";
 import { useGeolocation } from "../hooks/useGeolocation";
 import { useCafeFilter } from "../hooks/useCafeFilter";
 
@@ -27,7 +28,6 @@ export function Home({
   onOpenQuiz
 }) {
   const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'map'
-  const [modalCafe, setModalCafe] = useState(null);
   const [showMobileFilter, setShowMobileFilter] = useState(false);
 
   const {
@@ -61,74 +61,93 @@ export function Home({
     totalCount
   } = useCafeFilter(allCafes, userLocation);
 
-  // Pick a random cafe
-  const pickRandomCafe = () => {
-    if (allCafes.length === 0) return;
-    const random = allCafes[Math.floor(Math.random() * allCafes.length)];
-    setModalCafe(random);
+  // Check if any filter or search is active
+  const isFilteringActive = activeFiltersCount > 0;
+
+  // Curated Discovery Shelves from actual data (shown on discovery mode when no specific filter is active)
+  const topWfcCafes = useMemo(() => {
+    return allCafes
+      .filter((c) => (c.wfcScore && c.wfcScore >= 9.2) || c.category?.includes("WFC"))
+      .slice(0, 3);
+  }, [allCafes]);
+
+  const topSpecialtyCafes = useMemo(() => {
+    return allCafes
+      .filter((c) => c.category?.includes("Specialty") || c.category?.includes("Roastery"))
+      .slice(0, 3);
+  }, [allCafes]);
+
+  const topBudgetCafes = useMemo(() => {
+    return allCafes
+      .filter((c) => c.price === "$" || (c.priceNumeric && c.priceNumeric <= 25000))
+      .slice(0, 3);
+  }, [allCafes]);
+
+  // Quick Preset Handlers
+  const applyPreset = (preset) => {
+    resetFilters();
+    if (preset === "wfc") {
+      setSelectedCategory("WFC");
+      toggleFacility("WiFi Kencang");
+      toggleFacility("Banyak Stopkontak");
+    } else if (preset === "budget") {
+      setSelectedBudget("$");
+    } else if (preset === "specialty") {
+      setSelectedCategory("Specialty");
+    } else if (preset === "outdoor") {
+      toggleFacility("Area Outdoor");
+    }
   };
 
-  // Average Rating
-  const avgRating = (
-    allCafes.reduce((acc, c) => acc + (c.rating || 0), 0) / (allCafes.length || 1)
-  ).toFixed(1);
-
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-10 pb-16">
       
-      {/* HERO SECTION */}
-      <section className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-amber-900 via-stone-900 to-amber-950 text-white p-6 sm:p-10 shadow-xl">
-        <div className="relative z-10 max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-            <span>Direktori Kedai Kopi & WFC #1 Terkurasi</span>
+      {/* 1. HERO SECTION (Clean, Editorial, Purposeful) */}
+      <section className="bg-stone-100/70 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-6 sm:p-10 transition-colors">
+        <div className="max-w-3xl space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 text-xs font-semibold border border-amber-300/40 dark:border-amber-700/40">
+            <Compass className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>Direktori Kedai Kopi & WFC Jakarta</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-            Temukan Spot Ngopi & <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
-              Work From Cafe
-            </span> Terbaik di Sekitarmu.
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-stone-900 dark:text-white leading-[1.15]">
+            Temukan kedai kopi yang pas untuk kebutuhanmu.
           </h1>
 
-          <p className="text-sm sm:text-base text-stone-300 max-w-2xl leading-relaxed">
-            Filter puluhan kedai kopi lokal berdasarkan kecepatan WiFi, jumlah stopkontak, suasana nugas, budget hemat, hingga posisi real-time di peta.
+          <p className="text-sm sm:text-base text-stone-600 dark:text-stone-400 max-w-2xl leading-relaxed">
+            Cari spot kerja produktif dengan WiFi stabil dan colokan melimpah, kedai specialty artisan, atau tempat nongkrong santai yang ramah kantong di sekitarmu.
           </p>
 
-          {/* Quick Metrics Bar & CTA */}
-          <div className="pt-2 flex flex-wrap items-center gap-4 text-xs sm:text-sm">
-            <div className="flex items-center gap-6 py-2 px-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
-              <div>
-                <span className="text-stone-400 block text-[10px] uppercase font-bold">Total Kedai</span>
-                <span className="font-extrabold text-base text-amber-400">{allCafes.length}</span>
-              </div>
-              <div className="border-l border-white/20 pl-6">
-                <span className="text-stone-400 block text-[10px] uppercase font-bold">Wilayah</span>
-                <span className="font-extrabold text-base text-amber-400">5 Area</span>
-              </div>
-              <div className="border-l border-white/20 pl-6">
-                <span className="text-stone-400 block text-[10px] uppercase font-bold">Rata-rata Rating</span>
-                <span className="font-extrabold text-base text-amber-400">⭐ {avgRating}</span>
-              </div>
-            </div>
-
-            {/* Random Pick Button */}
+          {/* Quick Filter Preset Chips */}
+          <div className="pt-2 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-stone-500 dark:text-stone-400 mr-1">Pilihan Cepat:</span>
             <button
-              onClick={pickRandomCafe}
-              className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold border border-white/20 transition-all flex items-center gap-2"
+              onClick={() => applyPreset("wfc")}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-amber-500 transition-colors inline-flex items-center gap-1.5 shadow-2xl"
             >
-              <Shuffle className="w-4 h-4 text-amber-400" />
-              <span>Pilihin Acak Dong!</span>
+              <Laptop className="w-3.5 h-3.5 text-amber-600" />
+              <span>WFC & Colokan</span>
+            </button>
+            <button
+              onClick={() => applyPreset("specialty")}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-amber-500 transition-colors inline-flex items-center gap-1.5 shadow-sm"
+            >
+              <Coffee className="w-3.5 h-3.5 text-amber-600" />
+              <span>Specialty & Manual Brew</span>
+            </button>
+            <button
+              onClick={() => applyPreset("budget")}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-amber-500 transition-colors inline-flex items-center gap-1.5 shadow-sm"
+            >
+              <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Budget Hemat (&lt; 25rb)</span>
             </button>
           </div>
         </div>
-
-        {/* Ambient background glow */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-amber-600/20 to-transparent pointer-events-none" />
       </section>
 
-      {/* SEARCH BAR & CONTROLS */}
-      <section className="space-y-4">
+      {/* 2. SEARCH & TOOLBAR */}
+      <section className="space-y-4" id="explore-directory">
         <SearchBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -147,29 +166,30 @@ export function Home({
           </div>
         )}
 
-        {/* View Mode & Results Count Bar */}
-        <div className="flex items-center justify-between gap-4">
+        {/* View Mode & Filter Summary */}
+        <div className="flex items-center justify-between gap-4 pt-1">
           <div className="text-xs sm:text-sm text-stone-600 dark:text-stone-400">
-            Menampilkan <span className="font-bold text-stone-900 dark:text-white">{filteredCafes.length}</span> kedai kopi
-            {selectedArea !== "Semua" && ` di Jak-${selectedArea}`}
+            Menampilkan <span className="font-bold text-stone-900 dark:text-white">{filteredCafes.length}</span> kedai
+            {selectedArea !== "Semua" && ` di Jakarta ${selectedArea}`}
+            {searchQuery && ` untuk "${searchQuery}"`}
           </div>
 
           {/* Grid vs Map Toggle */}
           <div className="flex items-center p-1 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 viewMode === "grid"
                   ? "bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-sm"
                   : "text-stone-500 hover:text-stone-900 dark:hover:text-white"
               }`}
             >
               <Grid className="w-3.5 h-3.5" />
-              <span>Grid</span>
+              <span>Daftar</span>
             </button>
             <button
               onClick={() => setViewMode("map")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 viewMode === "map"
                   ? "bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-sm"
                   : "text-stone-500 hover:text-stone-900 dark:hover:text-white"
@@ -182,7 +202,7 @@ export function Home({
         </div>
       </section>
 
-      {/* MAIN CONTENT: FILTER SIDEBAR & GRID/MAP */}
+      {/* 3. MAIN EXPLORER: FILTERS & DIRECTORY GRID/MAP */}
       <section className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         
         {/* Filter Panel (Desktop + Mobile Drawer) */}
@@ -206,7 +226,7 @@ export function Home({
           />
         </div>
 
-        {/* Content Area: Grid or Map */}
+        {/* Results Area */}
         <div className="lg:col-span-3 space-y-6">
           {viewMode === "grid" ? (
             <CafeGrid
@@ -218,31 +238,82 @@ export function Home({
               onToggleFavorite={onToggleFavorite}
               isInCompare={isInCompare}
               onToggleCompare={onToggleCompare}
-              onQuickView={(cafe) => setModalCafe(cafe)}
               onResetFilters={resetFilters}
+              searchQuery={searchQuery}
             />
           ) : (
             <CafeMap
               cafes={filteredCafes}
               userLocation={userLocation}
-              onSelectCafe={(cafe) => setModalCafe(cafe)}
-              selectedCafeId={modalCafe?.id}
             />
           )}
         </div>
 
       </section>
 
-      {/* Quick View Modal */}
-      {modalCafe && (
-        <CafeModal
-          cafe={modalCafe}
-          onClose={() => setModalCafe(null)}
-          isFavorite={isFavorite}
-          onToggleFavorite={onToggleFavorite}
-          isInCompare={isInCompare}
-          onToggleCompare={onToggleCompare}
-        />
+      {/* 4. CURATED DISCOVERY SHELVES (Shown when not currently in a filtered search) */}
+      {!isFilteringActive && viewMode === "grid" && (
+        <section className="space-y-10 pt-8 border-t border-stone-200 dark:border-stone-800">
+          
+          {/* Shelf 1: Top WFC Spot */}
+          <div className="space-y-4">
+            <div className="flex items-end justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Paling Direkomendasikan</span>
+                <h2 className="text-xl font-extrabold text-stone-900 dark:text-white">Spot Terbaik untuk Work From Cafe (WFC)</h2>
+              </div>
+              <button
+                onClick={() => applyPreset("wfc")}
+                className="text-xs font-semibold text-amber-600 hover:text-amber-700 flex items-center gap-1"
+              >
+                <span>Lihat Semua WFC</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {topWfcCafes.map((cafe) => (
+                <CafeCard
+                  key={cafe.id}
+                  cafe={cafe}
+                  isFavorite={isFavorite(cafe.id)}
+                  onToggleFavorite={onToggleFavorite}
+                  isInCompare={isInCompare(cafe.id)}
+                  onToggleCompare={onToggleCompare}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Shelf 2: Specialty & Artisan */}
+          <div className="space-y-4">
+            <div className="flex items-end justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Kopi Nusantara & Artisan</span>
+                <h2 className="text-xl font-extrabold text-stone-900 dark:text-white">Spesialis Manual Brew & In-House Roastery</h2>
+              </div>
+              <button
+                onClick={() => applyPreset("specialty")}
+                className="text-xs font-semibold text-amber-600 hover:text-amber-700 flex items-center gap-1"
+              >
+                <span>Lihat Specialty</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {topSpecialtyCafes.map((cafe) => (
+                <CafeCard
+                  key={cafe.id}
+                  cafe={cafe}
+                  isFavorite={isFavorite(cafe.id)}
+                  onToggleFavorite={onToggleFavorite}
+                  isInCompare={isInCompare(cafe.id)}
+                  onToggleCompare={onToggleCompare}
+                />
+              ))}
+            </div>
+          </div>
+
+        </section>
       )}
 
     </div>
